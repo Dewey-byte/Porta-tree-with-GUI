@@ -1,0 +1,2 @@
+pip install pyserial tkinter
+pip install pyserial pillow
