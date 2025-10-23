@@ -1,220 +1,197 @@
 import tkinter as tk
 from tkinter import Canvas
 import serial
-import serial.tools.list_ports
 import threading
 import time
 from PIL import Image, ImageTk
 
 # -------------------------------
-# CONFIGURATION
+PORT = "COM5"
+BAUD = 115200
+NUM_LANES = 2
 # -------------------------------
-BAUD = 9600
-RESET_TIME = 20  # seconds
-BOX_COLOR = "#202020"
-TEXT_COLOR = "white"
-BOX_TRANSPARENCY = 0.5  # simulated using darker colors
 
-# -------------------------------
-# AUTO-DETECT SERIAL PORT
-# -------------------------------
-def find_arduino_port():
-    ports = serial.tools.list_ports.comports()
-    for port in ports:
-        if "Arduino" in port.description or "USB Serial" in port.description:
-            print(f"✅ Arduino detected on {port.device}")
-            return port.device
-    if ports:
-        print(f"⚠️ Arduino not found, using first available: {ports[0].device}")
-        return ports[0].device
-    else:
-        print("❌ No serial ports detected.")
-        return None
-
-PORT = find_arduino_port()
-
-# -------------------------------
-# GUI SETUP
-# -------------------------------
 root = tk.Tk()
 root.title("Porta Tree Race Display")
 root.geometry("1200x700")
 root.configure(bg="black")
-
 canvas = Canvas(root, bg="black", highlightthickness=0)
 canvas.pack(fill="both", expand=True)
 
 # -------------------------------
-# BACKGROUND IMAGE
-# -------------------------------
+# Load background image
 try:
-    original_bg = Image.open("bg.jpg")
-    bg_photo = ImageTk.PhotoImage(original_bg)
-    bg_item = canvas.create_image(0, 0, anchor="nw", image=bg_photo)
-except Exception as e:
-    print("⚠️ Background image not found:", e)
+    bg_img = Image.open("bg.jpg")
+    bg_photo = ImageTk.PhotoImage(bg_img)
+    bg_item = canvas.create_image(0,0,anchor="nw", image=bg_photo)
+except:
+    bg_img = None
     bg_item = None
-    original_bg = None
 
 # -------------------------------
-# BLINKING CONTROL
-# -------------------------------
-blinking_states = {}
+# GUI Elements
+title_text = canvas.create_text(0,0,text="PORTA TREE READY", fill="lime", font=("Consolas",32,"bold"))
+lane_boxes = []
+lane_texts = []
 
-def blink_text(item, color1, color2, delay=500):
-    current = blinking_states.get(item, False)
-    new_color = color1 if not current else color2
-    canvas.itemconfig(item, fill=new_color)
-    blinking_states[item] = not current
-    canvas.after(delay, blink_text, item, color1, color2, delay)
-
-# -------------------------------
-# CREATE ELEMENTS
-# -------------------------------
-title_text = canvas.create_text(0, 0, text="PORTA TREE READY", fill="lime", font=("Consolas", 32, "bold"))
-
-laneA_label = canvas.create_text(0, 0, text="LANE 1", fill="white", font=("Consolas", 20, "bold"))
-laneB_label = canvas.create_text(0, 0, text="LANE 2", fill="white", font=("Consolas", 20, "bold"))
-
-laneA_box = canvas.create_rectangle(0, 0, 0, 0, fill="#111111", outline="white", width=2)
-laneB_box = canvas.create_rectangle(0, 0, 0, 0, fill="#111111", outline="white", width=2)
-
-laneA_text = canvas.create_text(0, 0, text="WAITING...", fill="white", font=("Consolas", 22, "bold"))
-laneB_text = canvas.create_text(0, 0, text="WAITING...", fill="white", font=("Consolas", 22, "bold"))
-
-stats_text = canvas.create_text(0, 0, text="", fill="white", font=("Consolas", 24, "bold"))
+for i in range(NUM_LANES):
+    box = canvas.create_rectangle(0,0,0,0,fill="#111111", outline="white", width=2)
+    lane_boxes.append(box)
+    txt = canvas.create_text(0,0,text="PLS PRE-STAGE", fill="white", font=("Consolas",22,"bold"))
+    lane_texts.append(txt)
 
 # -------------------------------
-# RESPONSIVE LAYOUT
+# Track state
+lane_running = [False]*NUM_LANES
+lane_start_time = [0]*NUM_LANES
+lane_elapsed = [0]*NUM_LANES
+lane_prestaged = [False]*NUM_LANES
+lane_false = [False]*NUM_LANES
+lane_reaction = [0]*NUM_LANES
+race_started = False
+countdown_running = False
+result_shown = False
+
+# -------------------------------
+# BLINKING TITLE
+blinking_state = False
+def blink_title():
+    global blinking_state
+    color = "lime" if blinking_state else "#004400"
+    canvas.itemconfig(title_text, fill=color)
+    blinking_state = not blinking_state
+    canvas.after(600, blink_title)
+blink_title()
+
 # -------------------------------
 def resize(event=None):
     w, h = canvas.winfo_width(), canvas.winfo_height()
+    if bg_img:
+        resized_bg = bg_img.resize((w,h))
+        bg_photo_resized = ImageTk.PhotoImage(resized_bg)
+        canvas.itemconfig(bg_item, image=bg_photo_resized)
+        canvas.bg_photo_resized = bg_photo_resized
+    canvas.itemconfig(title_text, font=("Consolas", int(h*0.045),"bold"))
+    canvas.coords(title_text, w/2, h*0.1)
 
-    # Resize background
-    if original_bg:
-        resized_bg = original_bg.resize((w, h))
-        bg_photo = ImageTk.PhotoImage(resized_bg)
-        canvas.itemconfig(bg_item, image=bg_photo)
-        canvas.bg_photo = bg_photo  # prevent garbage collection
-
-    # Scale fonts dynamically
-    title_font_size = int(h * 0.045)
-    lane_font_size = int(h * 0.03)
-    stats_font_size = int(h * 0.035)
-
-    canvas.itemconfig(title_text, font=("Consolas", title_font_size, "bold"))
-    canvas.itemconfig(laneA_label, font=("Consolas", lane_font_size, "bold"))
-    canvas.itemconfig(laneB_label, font=("Consolas", lane_font_size, "bold"))
-    canvas.itemconfig(laneA_text, font=("Consolas", lane_font_size, "bold"))
-    canvas.itemconfig(laneB_text, font=("Consolas", lane_font_size, "bold"))
-    canvas.itemconfig(stats_text, font=("Consolas", stats_font_size, "bold"))
-
-    # Positions
-    center_x = w / 2
-
-    canvas.coords(title_text, center_x, h * 0.1)
-
-    box_width = w * 0.35
-    box_height = h * 0.15
-    spacing = w * 0.05
-
-    # Lane A
-    x1a = center_x - box_width - spacing / 2
-    x2a = center_x - spacing / 2
-    y1 = h * 0.4
+    box_width = w*0.35
+    box_height = h*0.15
+    spacing = w*0.05
+    y1 = h*0.4
     y2 = y1 + box_height
-
-    # Lane B
-    x1b = center_x + spacing / 2
-    x2b = center_x + box_width + spacing / 2
-
-    canvas.coords(laneA_box, x1a, y1, x2a, y2)
-    canvas.coords(laneB_box, x1b, y1, x2b, y2)
-
-    canvas.coords(laneA_label, (x1a + x2a) / 2, y1 - 40)
-    canvas.coords(laneB_label, (x1b + x2b) / 2, y1 - 40)
-
-    canvas.coords(laneA_text, (x1a + x2a) / 2, (y1 + y2) / 2)
-    canvas.coords(laneB_text, (x1b + x2b) / 2, (y1 + y2) / 2)
-
-    canvas.coords(stats_text, center_x, h * 0.75)
-
+    for i in range(NUM_LANES):
+        x1 = (w/2 - box_width - spacing/2) if i==0 else (w/2 + spacing/2)
+        x2 = (w/2 - spacing/2) if i==0 else (w/2 + box_width + spacing/2)
+        canvas.coords(lane_boxes[i], x1, y1, x2, y2)
+        canvas.coords(lane_texts[i], (x1+x2)/2, (y1+y2)/2)
 canvas.bind("<Configure>", resize)
+resize()
 
 # -------------------------------
-# UI LOGIC
+def update_lane_running(lane):
+    """Update lane box with running time in seconds"""
+    elapsed_sec = int(lane_elapsed[lane-1]/1000)
+    canvas.itemconfig(lane_texts[lane-1], text=f"RUNNING\n{elapsed_sec}s")
+    canvas.itemconfig(lane_boxes[lane-1], fill="green")
+
+def update_lane_result(lane, state, rt, et, kph):
+    """Update lane box after race finished, display stats"""
+    txt_id = lane_texts[lane-1]
+    box_id = lane_boxes[lane-1]
+    canvas.itemconfig(txt_id, text=f"{state}\nRT:{rt}ms ET:{et}ms KPH:{kph}")
+    color = "red" if state=="FALSE START" else "green"
+    canvas.itemconfig(box_id, fill=color)
+
+def reset_gui():
+    global race_started, result_shown, countdown_running
+    race_started = False
+    countdown_running = False
+    result_shown = False
+    for i in range(NUM_LANES):
+        lane_running[i] = False
+        lane_start_time[i] = 0
+        lane_elapsed[i] = 0
+        lane_prestaged[i] = False
+        lane_false[i] = False
+        lane_reaction[i] = 0
+        canvas.itemconfig(lane_texts[i], text="PLS PRE-STAGE")
+        canvas.itemconfig(lane_boxes[i], fill="#111111")
+    canvas.itemconfig(title_text,text="PORTA TREE READY", fill="lime")
+
 # -------------------------------
-def update_lane(lane, state, color=None, blink=False):
-    text_id = laneA_text if lane == 1 else laneB_text
-    box_id = laneA_box if lane == 1 else laneB_box
-
-    canvas.itemconfig(text_id, text=state)
-    if color:
-        canvas.itemconfig(box_id, fill=color)
-    else:
-        canvas.itemconfig(box_id, fill="#111111")
-
-    if blink:
-        blink_text(text_id, color, "white", 500)
-    else:
-        canvas.itemconfig(text_id, fill="white")
-
-def show_stats(rt, et, kph):
-    canvas.itemconfig(stats_text, text=f"RT: {rt} | ET: {et} | KPH: {kph}")
-
-def reset_race():
-    canvas.itemconfig(title_text, text="RESETTING...", fill="yellow")
-    canvas.itemconfig(stats_text, text="")
-    update_lane(1, "WAITING...")
-    update_lane(2, "WAITING...")
-    root.after(RESET_TIME * 1000, lambda: canvas.itemconfig(title_text, text="PORTA TREE READY", fill="lime"))
-
 def handle_serial():
-    if not PORT:
-        print("❌ No serial port found.")
-        return
-
+    global race_started, countdown_running, result_shown
     try:
-        ser = serial.Serial(PORT, BAUD)
+        ser = serial.Serial(PORT, BAUD, timeout=1)
+        print(f"Connected to {PORT}")
         while True:
-            data = ser.readline().decode().strip()
-            if not data:
+            line = ser.readline().decode(errors='ignore').strip()
+            if not line:
+                # update running timer
+                if race_started and not result_shown:
+                    for i in range(NUM_LANES):
+                        if lane_running[i]:
+                            lane_elapsed[i] = int((time.time() - lane_start_time[i])*1000)
+                            update_lane_running(i+1)
                 continue
-            print("📡 Serial:", data)
+            print("Serial:", line)
 
-            if "L1_PRESTAGE" in data:
-                update_lane(1, "PRE-STAGE", "orange", blink=True)
-            elif "L2_PRESTAGE" in data:
-                update_lane(2, "PRE-STAGE", "orange", blink=True)
-            elif "L1_STAGE" in data:
-                update_lane(1, "PLS STAGE", "cyan", blink=True)
-            elif "L2_STAGE" in data:
-                update_lane(2, "PLS STAGE", "cyan", blink=True)
-            elif "L1_FALSESTART" in data:
-                update_lane(1, "FALSE START", "red", blink=True)
-            elif "L2_FALSESTART" in data:
-                update_lane(2, "FALSE START", "red", blink=True)
-            elif "WINNER:1" in data:
-                update_lane(1, "WINNER", "lime", blink=True)
-            elif "WINNER:2" in data:
-                update_lane(2, "WINNER", "lime", blink=True)
-            elif "RESULT:TIE" in data:
-                update_lane(1, "DRAW", "lime", blink=True)
-                update_lane(2, "DRAW", "lime", blink=True)
-            elif "L1_RT" in data or "L2_RT" in data:
-                parts = data.replace("L1_", "").replace("L2_", "").split("|")
-                rt = parts[0].split(":")[1]
-                et = parts[1].split(":")[1]
-                kph = parts[2].split(":")[1]
-                show_stats(rt, et, kph)
-                reset_race()
+            # --- PRESTAGE / STAGE ---
+            if "PRESTAGE" in line:
+                lane = int(line[1])
+                lane_prestaged[lane-1] = True
+                canvas.itemconfig(lane_texts[lane-1], text="PRE-STAGE")
+                canvas.itemconfig(lane_boxes[lane-1], fill="orange")
+            elif "STAGE" in line:
+                lane = int(line[1])
+                canvas.itemconfig(lane_texts[lane-1], text="STAGE")
+                canvas.itemconfig(lane_boxes[lane-1], fill="cyan")
+
+            # --- GO ---
+            elif "GO" in line:
+                if all(lane_prestaged):
+                    race_started = True
+                    countdown_running = False
+                    for i in range(NUM_LANES):
+                        lane_running[i] = True
+                        lane_start_time[i] = time.time()
+                        lane_elapsed[i] = 0
+                        canvas.itemconfig(lane_texts[i], text="GO\n0s")
+                        canvas.itemconfig(lane_boxes[i], fill="green")
+                else:
+                    print("⚠️ Countdown blocked: not all lanes prestaged")
+
+            # --- FALSE START (during countdown) ---
+            elif "FALSESTART" in line:
+                lane = int(line[1])
+                lane_false[lane-1] = True
+                canvas.itemconfig(lane_texts[lane-1], text="FALSE START")
+                canvas.itemconfig(lane_boxes[lane-1], fill="red")
+
+            # --- FINISH ---
+            elif "FINISH" in line:
+                lane = int(line[1])
+                lane_running[lane-1] = False
+
+            # --- FINAL STATS ---
+            elif "_RT:" in line:
+                if not result_shown:
+                    result_shown = True
+                    for i in range(NUM_LANES):
+                        parts = line.split("_RT:")[1].split("|")
+                        rt = int(parts[0])
+                        et = int(parts[1].split(":")[1])
+                        kph = int(parts[2].split(":")[1])
+                        state = "FALSE START" if lane_false[i] else "WINNER" if i==0 else "LOSER"
+                        update_lane_result(i+1, state, rt, et, kph)
+
+            # --- RESET ---
+            elif "RESET" in line:
+                reset_gui()
+
     except Exception as e:
         print("Serial error:", e)
 
 # -------------------------------
-# MAIN LOOP
-# -------------------------------
-blink_text(title_text, "lime", "#004400", 600)  # title blinking
 threading.Thread(target=handle_serial, daemon=True).start()
-resize()
 root.mainloop()
