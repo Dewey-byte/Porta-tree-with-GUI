@@ -1,168 +1,198 @@
+import serial
+import threading
+import time
 import tkinter as tk
 from tkinter import Canvas
 from PIL import Image, ImageTk
-import threading
-import time
-import serial
 
-# -------------------------------
+# ===================== SERIAL CONFIG =====================
 PORT = "COM5"
-BAUD = 115200
-NUM_LANES = 2
-# -------------------------------
+BAUDRATE = 115200
 
+# ===================== GUI SETUP =====================
 root = tk.Tk()
 root.title("Porta Tree Race Display")
-root.geometry("1200x700")
+root.geometry("1200x650")
 root.configure(bg="black")
+root.minsize(900, 500)
 
 canvas = Canvas(root, bg="black", highlightthickness=0)
 canvas.pack(fill="both", expand=True)
 
-# -------------------------------
-# Load background image
-bg_image = Image.open("bg.jpg")
-bg_photo = ImageTk.PhotoImage(bg_image)
-bg_item = canvas.create_image(0, 0, anchor="nw", image=bg_photo)
+# ===================== LOAD & RESIZE BACKGROUND =====================
+bg_image = Image.open("assets/bg.jpg")
+bg_photo = None
+bg_item = canvas.create_image(0, 0, anchor="nw")
+def resize_bg(event):
+    resized = bg_image.resize((event.width, event.height), Image.LANCZOS)
+    canvas.bg_photo = ImageTk.PhotoImage(resized)
+    canvas.itemconfig(bg_item, image=canvas.bg_photo)
 
-# -------------------------------
-# GUI Elements
-title_text = canvas.create_text(0, 0, text="PORTA TREE READY", fill="green", font=("Consolas", 32, "bold"))
-lane_boxes, lane_texts, lane_labels = [], [], []
+# Force initial image set
+canvas.bg_photo = ImageTk.PhotoImage(bg_image.resize((1200, 650), Image.LANCZOS))
+canvas.itemconfig(bg_item, image=canvas.bg_photo)
 
-def resize(event=None):
-    w, h = canvas.winfo_width(), canvas.winfo_height()
 
-    # Resize and update background
-    resized = bg_image.resize((w, h), Image.Resampling.LANCZOS)
-    new_bg = ImageTk.PhotoImage(resized)
-    canvas.itemconfig(bg_item, image=new_bg)
-    canvas.image = new_bg  # prevent garbage collection
+# ===================== HEADER =====================
+title_text = canvas.create_text(
+    0, 0,
+    text="PORTA TREE READY",
+    fill="#00aa00",
+    font=("Arial Black", 36),
+    anchor="n"
+)
 
-    # Title
-    canvas.coords(title_text, w / 2, h * 0.1)
-    canvas.itemconfig(title_text, font=("Consolas", int(h * 0.045), "bold"))
+# ===================== RESET BUTTON =====================
+def manual_reset():
+    update_title("PORTA TREE READY", "#00aa00")
+    update_lane(1, "PLS PRE-STAGE", "black")
+    update_lane(2, "PLS PRE-STAGE", "black")
 
-    box_width = w * 0.35
-    box_height = h * 0.15
-    spacing = w * 0.05
-    y1 = h * 0.45
-    y2 = y1 + box_height
+reset_btn = tk.Button(
+    root,
+    text="RESET",
+    bg="red",
+    fg="white",
+    font=("Arial Black", 14),
+    command=manual_reset
+)
 
-    # Lane boxes and labels
-    for i in range(NUM_LANES):
-        x1 = (w / 2 - box_width - spacing / 2) if i == 0 else (w / 2 + spacing / 2)
-        x2 = (w / 2 - spacing / 2) if i == 0 else (w / 2 + box_width + spacing / 2)
-        canvas.coords(lane_boxes[i], x1, y1, x2, y2)
-        canvas.coords(lane_texts[i], (x1 + x2) / 2, (y1 + y2) / 2)
-        canvas.coords(lane_labels[i], (x1 + x2) / 2, y1 - 35)
-        canvas.itemconfig(lane_texts[i], font=("Consolas", int(h * 0.04), "bold"))
-        canvas.itemconfig(lane_labels[i], font=("Consolas", int(h * 0.035), "bold"))
+reset_window = canvas.create_window(30, 30, anchor="nw", window=reset_btn)
 
-# Create lane boxes
-for i in range(NUM_LANES):
-    label = canvas.create_text(0, 0, text=f"LANE {i+1}", fill="yellow", font=("Consolas", 22, "bold"))
-    lane_labels.append(label)
+# ===================== LANE LABELS =====================
+lane1_label = canvas.create_text(0, 0, text="LANE 1", fill="yellow", font=("Arial Black", 22))
+lane2_label = canvas.create_text(0, 0, text="LANE 2", fill="yellow", font=("Arial Black", 22))
 
-    box = canvas.create_rectangle(0, 0, 0, 0, fill="black", outline="white", width=2)
-    lane_boxes.append(box)
+# ===================== STATUS PANELS =====================
+lane1_box = canvas.create_rectangle(0, 0, 0, 0, fill="black", outline="white", width=2)
+lane2_box = canvas.create_rectangle(0, 0, 0, 0, fill="black", outline="white", width=2)
 
-    txt = canvas.create_text(0, 0, text="PLS PRE-STAGE", fill="white", font=("Consolas", 24, "bold"))
-    lane_texts.append(txt)
+lane1_text = canvas.create_text(0, 0, text="PLS PRE-STAGE", fill="white", font=("Consolas", 26, "bold"))
+lane2_text = canvas.create_text(0, 0, text="PLS PRE-STAGE", fill="white", font=("Consolas", 26, "bold"))
 
-canvas.bind("<Configure>", resize)
+# ===================== RESPONSIVE LAYOUT =====================
+def layout(event):
+    w, h = event.width, event.height
 
-# -------------------------------
-# Reset button
-def send_reset():
-    try:
-        ser.write(b"RESET\n")
-    except:
-        pass
-    reset_gui()
+    canvas.coords(title_text, w // 2, 40)
 
-reset_btn = tk.Button(root, text="RESET", font=("Consolas", 18, "bold"), bg="red", fg="white", width=10, command=send_reset)
-reset_window = canvas.create_window(100, 60, window=reset_btn)
+    canvas.coords(lane1_label, w * 0.3, h * 0.45 - 70)
+    canvas.coords(lane2_label, w * 0.7, h * 0.45 - 70)
 
-# -------------------------------
-# Race states
-race_started = False
+    canvas.coords(lane1_box, w * 0.15, h * 0.45, w * 0.45, h * 0.60)
+    canvas.coords(lane2_box, w * 0.55, h * 0.45, w * 0.85, h * 0.60)
 
+    canvas.coords(lane1_text, w * 0.3, h * 0.525)
+    canvas.coords(lane2_text, w * 0.7, h * 0.525)
+
+canvas.bind("<Configure>", layout)
+
+# ===================== UPDATE FUNCTIONS =====================
 def update_lane(lane, text, color):
-    canvas.itemconfig(lane_texts[lane - 1], text=text, fill="white")
-    canvas.itemconfig(lane_boxes[lane - 1], fill=color)
+    if lane == 1:
+        canvas.itemconfig(lane1_text, text=text)
+        canvas.itemconfig(lane1_box, fill=color)
+    elif lane == 2:
+        canvas.itemconfig(lane2_text, text=text)
+        canvas.itemconfig(lane2_box, fill=color)
 
-def blink_winner(lane):
-    def blink():
-        for _ in range(6):
-            canvas.itemconfig(lane_boxes[lane - 1], fill="lime")
-            time.sleep(0.3)
-            canvas.itemconfig(lane_boxes[lane - 1], fill="black")
-            time.sleep(0.3)
-        canvas.itemconfig(lane_boxes[lane - 1], fill="lime")
-    threading.Thread(target=blink, daemon=True).start()
+def update_title(text, color):
+    canvas.itemconfig(title_text, text=text, fill=color)
 
-def reset_gui():
-    global race_started
-    race_started = False
-    canvas.itemconfig(title_text, text="PORTA TREE READY", fill="green")
-    for i in range(NUM_LANES):
-        canvas.itemconfig(lane_boxes[i], fill="black")
-        canvas.itemconfig(lane_texts[i], text="PLS PRE-STAGE", fill="white")
+# ===================== AUTO RESET =====================
+def reset_gui(delay=3):
+    def _reset():
+        time.sleep(delay)
+        canvas.after(0, manual_reset)
+    threading.Thread(target=_reset, daemon=True).start()
 
-# -------------------------------
-# Serial listener
+# ===================== SERIAL LISTENER (UNCHANGED LOGIC) =====================
 def serial_listener():
-    global race_started
     try:
-        ser = serial.Serial(PORT, BAUD, timeout=1)
-        print(f"✅ Connected to {PORT}")
+        ser = serial.Serial(PORT, BAUDRATE, timeout=1)
+        print(f"Connected to {PORT}")
+
         while True:
-            line = ser.readline().decode(errors='ignore').strip()
-            if not line:
-                continue
-            print("Serial:", line)
-            line = line.upper()
+            if ser.in_waiting:
+                line = ser.readline().decode(errors="ignore").strip()
+                if not line:
+                    continue
 
-            lane = None
-            if "L" in line:
-                try:
-                    lane = int(line.split("L")[-1][0])
-                except:
-                    lane = None
+                print("SERIAL:", line)
+                u = line.upper()
+                
+                # ---------- PRE-STAGE / READY ----------
+                if "PRE-STAGE" in u or "PRE STAGE" in u:
+                    update_lane(1, "PLS PRE-STAGE", "black")
+                    update_lane(2, "PLS PRE-STAGE", "black")
+                    update_title("PORTA TREE READY", "#00aa00")
 
-            if "PRESTAGE" in line and lane:
-                update_lane(lane, "PRE-STAGE", "#222222")
+                elif "READY" in u or "VEHICLES READY" in u:
+                    update_title("READY", "orange")
+                    update_lane(1, "READY", "#ff4600")
+                    update_lane(2, "READY", "#ff4600")
 
-            elif "STAGE" in line and lane:
-                update_lane(lane, "STAGE", "#0088ff")
+                elif "SET" in u or "VEHICLES SET" in u:
+                    update_title("SET", "orange")
+                    update_lane(1, "SET", "#bf3400")
+                    update_lane(2, "SET", "#bf3400")
 
-            elif "GO" in line:
-                race_started = True
-                canvas.itemconfig(title_text, text="GO!", fill="lime")
+                # ---------- STAGED ----------
+                elif "LANE1" in u and "STAGED" in u:
+                    update_lane(1, "STAGED", "#00aaff")
 
-            elif "FALSESTART" in line and lane:
-                update_lane(lane, "FALSE START", "red")
+                elif "LANE2" in u and "STAGED" in u:
+                    update_lane(2, "STAGED", "#00aaff")
 
-            elif "WINNER" in line and lane:
-                update_lane(lane, "WINNER", "lime")
-                canvas.itemconfig(title_text, text=f"🏁 WINNER: LANE {lane}", fill="yellow")
-                blink_winner(lane)
+                # ---------- COUNTDOWN ----------
+                elif u in ["3", "2", "1"]:
+                    update_title(u, "orange")
+                    update_lane(1, "READY", "#ffaa00")
+                    update_lane(2, "READY", "#ffaa00")
 
-            elif "LOSER" in line and lane:
-                update_lane(lane, "LOSER", "gray")
+                
+                if "LANE 1" in u and "BAD START" in u:
+                    update_title("BAD START", "red")
+                    update_lane(1, "FALSE START", "#ff0000")
+                    update_lane(2, "GOOD", "#00aa00")
+                    reset_gui(3)
 
-            elif "TIE" in line:
-                canvas.itemconfig(title_text, text="🤝 TIE!", fill="yellow")
-                for i in range(NUM_LANES):
-                    update_lane(i + 1, "TIE", "yellow")
+                elif "LANE 2" in u and "BAD START" in u:
+                    update_title("BAD START", "red")
+                    update_lane(2, "FALSE START", "#ff0000")
+                    update_lane(1, "GOOD", "#00aa00")
+                    reset_gui(3)
 
-            elif "RESET" in line:
-                reset_gui()
+                elif "DOUBLE" in u and "BAD START" in u:
+                    update_title("BOTH FALSE START", "red")
+                    update_lane(1, "FALSE START", "#ff0000")
+                    update_lane(2, "FALSE START", "#ff0000")
+                    reset_gui(3)
+
+                elif "LANE 1 WINS" in u:
+                    update_title("FINISH", "white")
+                    update_lane(1, "WINNER", "#00ff00")
+                    update_lane(2, "LOSE", "#ff0000")
+                    reset_gui(4)
+
+                elif "LANE 2 WINS" in u:
+                    update_title("FINISH", "white")
+                    update_lane(2, "WINNER", "#00ff00")
+                    update_lane(1, "LOSE", "#ff0000")
+                    reset_gui(4)
+
+                    # ---------- TIE ----------
+                elif "DOUBLE WINNER" in u:
+                    update_title("TIE!", "white")
+                    update_lane(1, "TIE", "#00ffff")
+                    update_lane(2, "TIE", "#00ffff")
+                    reset_gui(4)
 
     except Exception as e:
-        print("❌ Serial error:", e)
+        print("Serial Error:", e)
 
-# -------------------------------
+# ===================== START THREAD =====================
 threading.Thread(target=serial_listener, daemon=True).start()
+
+manual_reset()
 root.mainloop()

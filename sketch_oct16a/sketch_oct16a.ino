@@ -112,8 +112,8 @@ void setup() {
   Serial.begin(115200);
  
   Serial.println("System Ready");
-  Serial.println("LANE 1 Ready..");
-  Serial.println("LANE 2 Ready..");
+  Serial.println("Pre-Stage");
+  Serial.println("Pre-Stage");
 
 
   
@@ -133,7 +133,10 @@ void loop()
   int j = 0;
 
 
-
+//Serial.print("Finish: ");
+   // Serial.println(Finish_Sensor_Value[0]);
+   // Serial.println(Finish_Sensor_Value[1]);
+   // delay (1000);
   /*
     Serial.print("PreStage: ");
     Serial.println(Pre_Stage_Sensor_Value[0]);
@@ -239,7 +242,7 @@ void loop()
         delay(1000);
         Serial.println("1");
         delay(1000);
-        Serial.println("Vehicles Ready");
+        Serial.println("Vehicles Set");
         state++;
       }
 
@@ -382,8 +385,269 @@ void loop()
         }
       }
 
-      if (FinishFlag[0]) state = 7;
+    
+      if (Finish_Sensor_Value[0] < 10 && Finish_Sensor_Value[1] < 10) 
+      {
+        Serial.println ("DOUBLE WINNER");
+
+        digitalWrite(LED_Prestage[0], LOW);
+      digitalWrite(LED_Prestage[1], LOW);
+      digitalWrite(LED_Stage[1], LOW);
+      digitalWrite(LED_Stage[0], LOW);
+      digitalWrite(LED_Y12, LOW);
+      digitalWrite(LED_Y1, LOW);
+      digitalWrite(LED_Y2, LOW);
+      digitalWrite(LED_Y22, LOW);
+      digitalWrite(LED_Y32, LOW);
+      digitalWrite(LED_Y3, LOW);
+      digitalWrite(LED_Start, LOW);
+          digitalWrite(LED_Start2, LOW);
+          digitalWrite(LED_RED_Light, LOW);
+          digitalWrite(LED_RED_Light2, LOW);
+        digitalWrite(LED_Prestage[0], HIGH);
+         digitalWrite(LED_Prestage[1], HIGH);
+         digitalWrite(LED_Stage[1], LOW);
+         digitalWrite(LED_Stage[0], LOW);
+           delay(100);
+         digitalWrite(LED_Stage[0], HIGH);
+         digitalWrite(LED_Stage[1], HIGH);
+           delay(100);
+         digitalWrite(LED_Stage[0], LOW);
+         digitalWrite(LED_Stage[1], LOW);
+         digitalWrite(LED_Y1, HIGH);
+         digitalWrite(LED_Y12, HIGH);
+           delay(100);
+          digitalWrite(LED_Y12, LOW);
+          digitalWrite(LED_Y1, LOW);
+          digitalWrite(LED_Y2, HIGH);
+          digitalWrite(LED_Y22, HIGH);
+           delay(100);
+          digitalWrite(LED_Y2, LOW);
+          digitalWrite(LED_Y22, LOW);
+          digitalWrite(LED_Y3, HIGH);
+          digitalWrite(LED_Y32, HIGH);
+           delay(100);
+          digitalWrite(LED_Y32, LOW);
+           digitalWrite(LED_Y3, LOW);
+          digitalWrite(LED_Start, HIGH);
+          digitalWrite(LED_Start2, HIGH);
+           delay(100);
+          digitalWrite(LED_Start, LOW);
+          digitalWrite(LED_Start2, LOW);
+          digitalWrite(LED_RED_Light, HIGH);
+          digitalWrite(LED_RED_Light2, HIGH);
+           delay(100);
+          digitalWrite(LED_RED_Light, LOW);
+          digitalWrite(LED_RED_Light2, LOW);
+          digitalWrite(LED_Prestage[0], LOW);
+      digitalWrite(LED_Prestage[1], LOW);
+      digitalWrite(LED_Stage[1], LOW);
+      digitalWrite(LED_Stage[0], LOW);
+      digitalWrite(LED_Y12, LOW);
+      digitalWrite(LED_Y1, LOW);
+      digitalWrite(LED_Y2, LOW);
+      digitalWrite(LED_Y22, LOW);
+      digitalWrite(LED_Y32, LOW);
+      digitalWrite(LED_Y3, LOW);
+      digitalWrite(LED_Start, LOW);
+          digitalWrite(LED_Start2, LOW);
+          digitalWrite(LED_RED_Light, LOW);
+          digitalWrite(LED_RED_Light2, LOW);
+        digitalWrite(LED_Prestage[0], HIGH);
+         digitalWrite(LED_Prestage[1], HIGH);
+         digitalWrite(LED_Stage[1], LOW);
+         digitalWrite(LED_Stage[0], LOW);
+           delay(100);
+         digitalWrite(LED_Stage[0], HIGH);
+         digitalWrite(LED_Stage[1], HIGH);
+           delay(100);
+         digitalWrite(LED_Stage[0], LOW);
+         digitalWrite(LED_Stage[1], LOW);
+         digitalWrite(LED_Y1, HIGH);
+         digitalWrite(LED_Y12, HIGH);
+           delay(100);
+          digitalWrite(LED_Y12, LOW);
+          digitalWrite(LED_Y1, LOW);
+          digitalWrite(LED_Y2, HIGH);
+          digitalWrite(LED_Y22, HIGH);
+           delay(100);
+          digitalWrite(LED_Y2, LOW);
+          digitalWrite(LED_Y22, LOW);
+          digitalWrite(LED_Y3, HIGH);
+          digitalWrite(LED_Y32, HIGH);
+           delay(100);
+          digitalWrite(LED_Y32, LOW);
+           digitalWrite(LED_Y3, LOW);
+          digitalWrite(LED_Start, HIGH);
+          digitalWrite(LED_Start2, HIGH);
+           delay(100);
+          digitalWrite(LED_Start, LOW);
+          digitalWrite(LED_Start2, LOW);
+          digitalWrite(LED_RED_Light, HIGH);
+          digitalWrite(LED_RED_Light2, HIGH);
+           delay(100);
+          digitalWrite(LED_RED_Light, LOW);
+          digitalWrite(LED_RED_Light2, LOW);digitalWrite(LED_Prestage[0], LOW);
+      digitalWrite(LED_Prestage[1], LOW);
+      digitalWrite(LED_Stage[1], LOW);
+      digitalWrite(LED_Stage[0], LOW);
+      digitalWrite(LED_Y12, LOW);
+      digitalWrite(LED_Y1, LOW);
+      digitalWrite(LED_Y2, LOW);
+      digitalWrite(LED_Y22, LOW);
+      digitalWrite(LED_Y32, LOW);
+      digitalWrite(LED_Y3, LOW);
+      digitalWrite(LED_Start, LOW);
+          digitalWrite(LED_Start2, LOW);
+          digitalWrite(LED_RED_Light, LOW);
+          digitalWrite(LED_RED_Light2, LOW);
+        digitalWrite(LED_Prestage[0], HIGH);
+         digitalWrite(LED_Prestage[1], HIGH);
+         digitalWrite(LED_Stage[1], LOW);
+         digitalWrite(LED_Stage[0], LOW);
+           delay(100);
+         digitalWrite(LED_Stage[0], HIGH);
+         digitalWrite(LED_Stage[1], HIGH);
+           delay(100);
+         digitalWrite(LED_Stage[0], LOW);
+         digitalWrite(LED_Stage[1], LOW);
+         digitalWrite(LED_Y1, HIGH);
+         digitalWrite(LED_Y12, HIGH);
+           delay(100);
+          digitalWrite(LED_Y12, LOW);
+          digitalWrite(LED_Y1, LOW);
+          digitalWrite(LED_Y2, HIGH);
+          digitalWrite(LED_Y22, HIGH);
+           delay(100);
+          digitalWrite(LED_Y2, LOW);
+          digitalWrite(LED_Y22, LOW);
+          digitalWrite(LED_Y3, HIGH);
+          digitalWrite(LED_Y32, HIGH);
+           delay(100);
+          digitalWrite(LED_Y32, LOW);
+           digitalWrite(LED_Y3, LOW);
+          digitalWrite(LED_Start, HIGH);
+          digitalWrite(LED_Start2, HIGH);
+           delay(100);
+          digitalWrite(LED_Start, LOW);
+          digitalWrite(LED_Start2, LOW);
+          digitalWrite(LED_RED_Light, HIGH);
+          digitalWrite(LED_RED_Light2, HIGH);
+           delay(100);
+          digitalWrite(LED_RED_Light, LOW);
+          digitalWrite(LED_RED_Light2, LOW);digitalWrite(LED_Prestage[0], LOW);
+      digitalWrite(LED_Prestage[1], LOW);
+      digitalWrite(LED_Stage[1], LOW);
+      digitalWrite(LED_Stage[0], LOW);
+      digitalWrite(LED_Y12, LOW);
+      digitalWrite(LED_Y1, LOW);
+      digitalWrite(LED_Y2, LOW);
+      digitalWrite(LED_Y22, LOW);
+      digitalWrite(LED_Y32, LOW);
+      digitalWrite(LED_Y3, LOW);
+      digitalWrite(LED_Start, LOW);
+          digitalWrite(LED_Start2, LOW);
+          digitalWrite(LED_RED_Light, LOW);
+          digitalWrite(LED_RED_Light2, LOW);
+        digitalWrite(LED_Prestage[0], HIGH);
+         digitalWrite(LED_Prestage[1], HIGH);
+         digitalWrite(LED_Stage[1], LOW);
+         digitalWrite(LED_Stage[0], LOW);
+           delay(100);
+         digitalWrite(LED_Stage[0], HIGH);
+         digitalWrite(LED_Stage[1], HIGH);
+           delay(100);
+         digitalWrite(LED_Stage[0], LOW);
+         digitalWrite(LED_Stage[1], LOW);
+         digitalWrite(LED_Y1, HIGH);
+         digitalWrite(LED_Y12, HIGH);
+           delay(100);
+          digitalWrite(LED_Y12, LOW);
+          digitalWrite(LED_Y1, LOW);
+          digitalWrite(LED_Y2, HIGH);
+          digitalWrite(LED_Y22, HIGH);
+           delay(100);
+          digitalWrite(LED_Y2, LOW);
+          digitalWrite(LED_Y22, LOW);
+          digitalWrite(LED_Y3, HIGH);
+          digitalWrite(LED_Y32, HIGH);
+           delay(100);
+          digitalWrite(LED_Y32, LOW);
+           digitalWrite(LED_Y3, LOW);
+          digitalWrite(LED_Start, HIGH);
+          digitalWrite(LED_Start2, HIGH);
+           delay(100);
+          digitalWrite(LED_Start, LOW);
+          digitalWrite(LED_Start2, LOW);
+          digitalWrite(LED_RED_Light, HIGH);
+          digitalWrite(LED_RED_Light2, HIGH);
+           delay(100);
+          digitalWrite(LED_RED_Light, LOW);
+          digitalWrite(LED_RED_Light2, LOW);digitalWrite(LED_Prestage[0], LOW);
+      digitalWrite(LED_Prestage[1], LOW);
+      digitalWrite(LED_Stage[1], LOW);
+      digitalWrite(LED_Stage[0], LOW);
+      digitalWrite(LED_Y12, LOW);
+      digitalWrite(LED_Y1, LOW);
+      digitalWrite(LED_Y2, LOW);
+      digitalWrite(LED_Y22, LOW);
+      digitalWrite(LED_Y32, LOW);
+      digitalWrite(LED_Y3, LOW);
+      digitalWrite(LED_Start, LOW);
+          digitalWrite(LED_Start2, LOW);
+          digitalWrite(LED_RED_Light, LOW);
+          digitalWrite(LED_RED_Light2, LOW);
+        digitalWrite(LED_Prestage[0], HIGH);
+         digitalWrite(LED_Prestage[1], HIGH);
+         digitalWrite(LED_Stage[1], LOW);
+         digitalWrite(LED_Stage[0], LOW);
+           delay(100);
+         digitalWrite(LED_Stage[0], HIGH);
+         digitalWrite(LED_Stage[1], HIGH);
+           delay(100);
+         digitalWrite(LED_Stage[0], LOW);
+         digitalWrite(LED_Stage[1], LOW);
+         digitalWrite(LED_Y1, HIGH);
+         digitalWrite(LED_Y12, HIGH);
+           delay(100);
+          digitalWrite(LED_Y12, LOW);
+          digitalWrite(LED_Y1, LOW);
+          digitalWrite(LED_Y2, HIGH);
+          digitalWrite(LED_Y22, HIGH);
+           delay(100);
+          digitalWrite(LED_Y2, LOW);
+          digitalWrite(LED_Y22, LOW);
+          digitalWrite(LED_Y3, HIGH);
+          digitalWrite(LED_Y32, HIGH);
+           delay(100);
+          digitalWrite(LED_Y32, LOW);
+           digitalWrite(LED_Y3, LOW);
+          digitalWrite(LED_Start, HIGH);
+          digitalWrite(LED_Start2, HIGH);
+           delay(100);
+          digitalWrite(LED_Start, LOW);
+          digitalWrite(LED_Start2, LOW);
+          digitalWrite(LED_RED_Light, HIGH);
+          digitalWrite(LED_RED_Light2, HIGH);
+           delay(100);
+          digitalWrite(LED_RED_Light, LOW);
+          digitalWrite(LED_RED_Light2, LOW);
+          
+   
+        StartFlag = false;
+        FinishFlag[0] = false;
+        Staged[0] = false;
+        Staged[1] = false;
+        FinishFlag[1] = false;
+        needClear = true;
+        state = 0;
+        delay(3000);
+        digitalWrite(LED_RST, HIGH);
+
+      }
+      else if (FinishFlag[0]) state = 7;
       else if (FinishFlag[1]) state = 8;
+      
       break;
 
     case 7: // LINE 1
@@ -591,7 +855,7 @@ void loop()
           
   
     if (digitalRead(RESET_BTN) == HIGH)
-        state = 9;
+        state = 10;
       }
     break;
     case 8: // LANE 2
@@ -782,9 +1046,64 @@ void loop()
 
   
     if (digitalRead(RESET_BTN) == HIGH)
-        state = 9;
+        state = 10;
       }
-    case 9:
+      case 9:
+      {
+        digitalWrite(LED_Prestage[0], LOW);
+      digitalWrite(LED_Prestage[1], LOW);
+      digitalWrite(LED_Stage[1], LOW);
+      digitalWrite(LED_Stage[0], LOW);
+      digitalWrite(LED_Y12, LOW);
+      digitalWrite(LED_Y1, LOW);
+      digitalWrite(LED_Y2, LOW);
+      digitalWrite(LED_Y22, LOW);
+      digitalWrite(LED_Y32, LOW);
+      digitalWrite(LED_Y3, LOW);
+      digitalWrite(LED_Start, LOW);
+          digitalWrite(LED_Start2, LOW);
+          digitalWrite(LED_RED_Light, LOW);
+          digitalWrite(LED_RED_Light2, LOW);
+        digitalWrite(LED_Prestage[0], HIGH);
+         digitalWrite(LED_Prestage[1], HIGH);
+         digitalWrite(LED_Stage[1], LOW);
+         digitalWrite(LED_Stage[0], LOW);
+           delay(100);
+         digitalWrite(LED_Stage[0], HIGH);
+         digitalWrite(LED_Stage[1], HIGH);
+           delay(100);
+         digitalWrite(LED_Stage[0], LOW);
+         digitalWrite(LED_Stage[1], LOW);
+         digitalWrite(LED_Y1, HIGH);
+         digitalWrite(LED_Y12, HIGH);
+           delay(100);
+          digitalWrite(LED_Y12, LOW);
+          digitalWrite(LED_Y1, LOW);
+          digitalWrite(LED_Y2, HIGH);
+          digitalWrite(LED_Y22, HIGH);
+           delay(100);
+          digitalWrite(LED_Y2, LOW);
+          digitalWrite(LED_Y22, LOW);
+          digitalWrite(LED_Y3, HIGH);
+          digitalWrite(LED_Y32, HIGH);
+           delay(100);
+          digitalWrite(LED_Y32, LOW);
+           digitalWrite(LED_Y3, LOW);
+          digitalWrite(LED_Start, HIGH);
+          digitalWrite(LED_Start2, HIGH);
+           delay(100);
+          digitalWrite(LED_Start, LOW);
+          digitalWrite(LED_Start2, LOW);
+          digitalWrite(LED_RED_Light, HIGH);
+          digitalWrite(LED_RED_Light2, HIGH);
+           delay(100);
+          digitalWrite(LED_RED_Light, LOW);
+          digitalWrite(LED_RED_Light2, LOW);
+
+           if (digitalRead(RESET_BTN) == HIGH)
+        state = 10;
+      }
+    case 10:
       if (digitalRead(RESET_BTN) == HIGH)
       { digitalWrite(LED_Prestage[0], LOW);
       digitalWrite(LED_Prestage[1], LOW);
@@ -961,7 +1280,7 @@ bool CheckEarlyStart()
           digitalWrite(LED_RED_Light, LOW);
           digitalWrite(LED_RED_Light2, LOW);
     
-    state = 9;
+    state = 10;
     }
  else if (Stage_Sensor_Value[0] > 501) {
     reactionTime[0] = CountDownFin - (millis() - countdownStart);
@@ -1048,7 +1367,7 @@ bool CheckEarlyStart()
           digitalWrite(LED_RED_Light, LOW);
           digitalWrite(LED_RED_Light2, LOW);
    
-    state = 9;
+    state = 10;
   }
   else if (Stage_Sensor_Value[1] > 501){
     digitalWrite(LED_Prestage[0], LOW);
@@ -1162,3 +1481,4 @@ void FlipAni() {
     }
   }
 }
+
