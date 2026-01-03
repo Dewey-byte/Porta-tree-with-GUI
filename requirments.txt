@@ -1,2 +1,6 @@
 pip install pyserial tkinter
 pip install pyserial pillow
+
+---if theres an update run this---
+
+python -m PyInstaller display_arduino_output.py --onefile --noconsole --icon assets\logo.ico --add-data "assets;assets" --clean --strip
