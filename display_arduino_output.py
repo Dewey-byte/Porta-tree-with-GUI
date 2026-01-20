@@ -115,17 +115,16 @@ def on_resize(event):
 
     canvas.coords(title_text, w // 2, 40)
 
-    canvas.coords(lane1_label, w * 0.3, h * 0.45 - 70)
-    canvas.coords(lane2_label, w * 0.7, h * 0.45 - 70)
+    # ------------------- NEW TOP CORNER POSITIONS -------------------
+    # Lane 1 top-left
+    canvas.coords(lane1_label, w * 0.1, h * 0.1 - 30)
+    canvas.coords(lane1_box, w * 0.05, h * 0.1, w * 0.25, h * 0.25)
+    canvas.coords(lane1_text, w * 0.15, h * 0.175)
 
-    canvas.coords(lane1_box, w * 0.15, h * 0.45, w * 0.45, h * 0.60)
-    canvas.coords(lane2_box, w * 0.55, h * 0.45, w * 0.85, h * 0.60)
-
-    canvas.coords(lane1_text, w * 0.3, h * 0.525)
-    canvas.coords(lane2_text, w * 0.7, h * 0.525)
-
-    canvas.coords(end_time_text, w // 2, h * 0.70)
-    canvas.coords(speed_text, w // 2, h * 0.80)
+    # Lane 2 top-right
+    canvas.coords(lane2_label, w * 0.9, h * 0.1 - 30)
+    canvas.coords(lane2_box, w * 0.75, h * 0.1, w * 0.95, h * 0.25)
+    canvas.coords(lane2_text, w * 0.85, h * 0.175)
 
 canvas.bind("<Configure>", on_resize)
 
@@ -147,6 +146,14 @@ def show_end_time(t):
 
 def show_speed(kph):
     canvas.itemconfig(speed_text, text=f"SPEED: {kph} KPH")
+
+# ========== NEW: UPDATE LANE ET ==========
+def update_lane_et(lane, et):
+    text = f"ET: {et:.2f} s"
+    if lane == 1:
+        canvas.itemconfig(lane1_text, text=text)
+    else:
+        canvas.itemconfig(lane2_text, text=text)
 
 # ===================== AUTO RESET =====================
 def reset_gui(delay=3):
@@ -193,6 +200,22 @@ def serial_listener():
 
             print("SERIAL:", line)
             u = line.upper()
+
+            # ===================== NEW: LIVE ET PARSING =====================
+            if "L1 ET:" in u and "L2 ET:" in u:
+                try:
+                    parts = line.split("|")
+                    l1_part = parts[0].split("L1 ET:")[1].strip().split()[0]
+                    l2_part = parts[1].split("L2 ET:")[1].strip().split()[0]
+
+                    l1_et = float(l1_part)
+                    l2_et = float(l2_part)
+
+                    canvas.after(0, update_lane_et, 1, l1_et)
+                    canvas.after(0, update_lane_et, 2, l2_et)
+                except Exception as e:
+                    print("ET parse error:", e)
+                continue
 
             if u.startswith("END TIME:"):
                 current_end_time = line.split(":")[1].strip()
