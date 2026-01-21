@@ -4,3 +4,8 @@ pip install pyserial pillow
 ---if theres an update run this---
 
 python -m PyInstaller display_arduino_output.py --onefile --noconsole --icon assets\logo.ico --add-data "assets;assets" --clean --strip
+
+---------for no bg image---------------
+python -m PyInstaller gui_green_bg.py --onefile --noconsole --icon assets\logo.ico --clean --strip
+
+
