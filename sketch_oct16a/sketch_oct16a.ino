@@ -168,7 +168,7 @@ for (int i = 0; i < NUM_LANES; i++) {
 //-----enter the state machine..---------//
   switch (state) {
     case 0: //prestasge state..
-      if (Pre_Stage_Sensor_Value[0] > 500 || Pre_Stage_Sensor_Value[1]  > 500 ) {
+      if (Pre_Stage_Sensor_Value[0] > 500 || Pre_Stage_Sensor_Value[1]  > 500 ) {  
        if (Pre_Stage_Sensor_Value[0] > 500)
        { 
           
